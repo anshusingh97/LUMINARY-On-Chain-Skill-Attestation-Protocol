@@ -1,7 +1,7 @@
 #![no_std]
 
 use soroban_sdk::{
-    contract, contractimpl, contracttype, events, log, symbol_short, vec, Address, Env, Map,
+    contract, contractimpl, contracttype, log, symbol_short, vec, Address, Env,
     String, Symbol, Vec,
 };
 
@@ -92,7 +92,7 @@ impl AttestationRegistry {
         attester.require_auth();
 
         // Validate level range
-        if level < 1 || level > 5 {
+        if !(1..=5).contains(&level) {
             panic!("level must be between 1 and 5");
         }
 

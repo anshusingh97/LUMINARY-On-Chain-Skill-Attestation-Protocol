@@ -28,7 +28,7 @@ fn setup() -> (
 
 #[test]
 fn test_initialize() {
-    let (env, client, admin, _attester, _subject) = setup();
+    let (_env, client, admin, _attester, _subject) = setup();
     assert_eq!(client.get_admin(), admin);
     assert_eq!(client.get_total_attestations(), 0);
 }
