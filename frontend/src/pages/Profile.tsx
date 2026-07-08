@@ -5,7 +5,7 @@ import TierBadge from '../components/TierBadge'
 import LevelPips from '../components/LevelPips'
 import { MOCK_ATTESTATIONS, truncateAddress } from '../lib/mockData'
 import { TIER_COLORS } from '../lib/constants'
-import { connectFreighter } from '../lib/stellar'
+import { connectFreighter, getSubjectAttestations, getReputationScore } from '../lib/stellar'
 
 export default function Profile() {
   const {
@@ -24,15 +24,60 @@ export default function Profile() {
       const wallet = await connectFreighter()
       if (wallet) {
         setWallet(wallet.pubKey, wallet.balance)
-        // Load mock data
-        setAttestations(MOCK_ATTESTATIONS.filter(a => a.subject === MOCK_ATTESTATIONS[0].subject))
-        setScore({
-          subject: wallet.pubKey,
-        score: 0,
-        tier: 'Unranked',
-        attestation_count: 0,
-        last_updated: Date.now() / 1000,
-      })
+        
+        // Fetch real data
+        try {
+          const [atts, scoreData] = await Promise.all([
+            getSubjectAttestations(wallet.pubKey, wallet.pubKey),
+            getReputationScore(wallet.pubKey, wallet.pubKey)
+          ])
+          
+          if (Array.isArray(atts)) {
+            // Convert SC map to Attestation object
+            const parsedAtts = atts.map((a: any) => ({
+              id: Number(a.id),
+              attester: a.attester,
+              subject: a.subject,
+              skill: a.skill,
+              level: Number(a.level),
+              timestamp: Number(a.timestamp),
+              revoked: Boolean(a.revoked),
+              endorsement_count: Number(a.endorsement_count)
+            }))
+            setAttestations(parsedAtts)
+          } else {
+            setAttestations([])
+          }
+
+          if (scoreData) {
+            setScore({
+              subject: wallet.pubKey,
+              score: Number(scoreData.score) || 0,
+              tier: String(scoreData.tier) || 'Unranked',
+              attestation_count: Number(scoreData.attestation_count) || 0,
+              last_updated: Number(scoreData.last_updated) || (Date.now() / 1000),
+            })
+          } else {
+            setScore({
+              subject: wallet.pubKey,
+              score: 0,
+              tier: 'Unranked',
+              attestation_count: 0,
+              last_updated: Date.now() / 1000,
+            })
+          }
+        } catch (e) {
+          console.error("Failed to load on-chain data", e)
+          setAttestations([])
+          setScore({
+            subject: wallet.pubKey,
+            score: 0,
+            tier: 'Unranked',
+            attestation_count: 0,
+            last_updated: Date.now() / 1000,
+          })
+        }
+        
         addNotification('success', 'Freighter connected successfully!')
       }
     } catch (err: unknown) {
@@ -45,15 +90,37 @@ export default function Profile() {
   const handleRefreshScore = async () => {
     setLoadingScore(true)
     try {
-      await new Promise(r => setTimeout(r, 1500))
-      setScore({
-        subject: walletPubKey,
-        score: 640,
-        tier: 'Expert',
-        attestation_count: 5,
-        last_updated: Date.now() / 1000,
-      })
-      addNotification('success', 'Reputation score refreshed from chain!')
+      const [atts, scoreData] = await Promise.all([
+        getSubjectAttestations(walletPubKey, walletPubKey),
+        getReputationScore(walletPubKey, walletPubKey)
+      ])
+
+      if (Array.isArray(atts)) {
+        const parsedAtts = atts.map((a: any) => ({
+          id: Number(a.id),
+          attester: a.attester,
+          subject: a.subject,
+          skill: a.skill,
+          level: Number(a.level),
+          timestamp: Number(a.timestamp),
+          revoked: Boolean(a.revoked),
+          endorsement_count: Number(a.endorsement_count)
+        }))
+        setAttestations(parsedAtts)
+      }
+
+      if (scoreData) {
+        setScore({
+          subject: walletPubKey,
+          score: Number(scoreData.score) || 0,
+          tier: String(scoreData.tier) || 'Unranked',
+          attestation_count: Number(scoreData.attestation_count) || 0,
+          last_updated: Number(scoreData.last_updated) || (Date.now() / 1000),
+        })
+        addNotification('success', 'Reputation score refreshed from chain!')
+      } else {
+        throw new Error("No score data returned")
+      }
     } catch {
       addNotification('error', 'Failed to fetch score')
     } finally {
