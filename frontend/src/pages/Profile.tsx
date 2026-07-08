@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Wallet, RefreshCw, Eye, EyeOff, Loader2, Copy, ExternalLink } from 'lucide-react'
+import { Wallet, RefreshCw, Loader2, Copy, ExternalLink } from 'lucide-react'
 import { useLuminaryStore } from '../lib/store'
 import TierBadge from '../components/TierBadge'
 import LevelPips from '../components/LevelPips'
@@ -35,8 +35,8 @@ export default function Profile() {
       })
         addNotification('success', 'Freighter connected successfully!')
       }
-    } catch (err: any) {
-      addNotification('error', err.message || 'Failed to connect Freighter')
+    } catch (err: unknown) {
+      addNotification('error', err instanceof Error ? err.message : 'Failed to connect Freighter')
     } finally {
       setIsLoading(false)
     }

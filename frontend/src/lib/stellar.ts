@@ -10,7 +10,7 @@ import {
 } from '@stellar/stellar-sdk'
 import {
   isConnected,
-  getPublicKey,
+  requestAccess,
   signTransaction,
 } from '@stellar/freighter-api'
 
@@ -19,7 +19,6 @@ import {
   NETWORK_PASSPHRASE,
   ATTESTATION_REGISTRY_ID,
   REPUTATION_SCORER_ID,
-  FRIENDBOT_URL,
 } from './constants'
 
 export const rpc = new SorobanRpc.Server(SOROBAN_RPC_URL, { allowHttp: false })
@@ -27,13 +26,12 @@ export const rpc = new SorobanRpc.Server(SOROBAN_RPC_URL, { allowHttp: false })
 // ─── Friendbot ────────────────────────────────────────────────────────────────
 export async function fetchBalance(publicKey: string): Promise<string> {
   try {
-    const account = await rpc.getAccount(publicKey)
     // For testnet, returning native XLM balance (approximate if native logic used, but Soroban doesn't expose classic balances via getAccount directly)
     // So we usually rely on Horizon. Let's use simple Horizon fetch for balance.
     const res = await fetch(`https://horizon-testnet.stellar.org/accounts/${publicKey}`)
     if (!res.ok) return '0.00'
     const data = await res.json()
-    const native = data.balances.find((b: any) => b.asset_type === 'native')
+    const native = data.balances.find((b: { asset_type: string; balance: string }) => b.asset_type === 'native')
     return native ? parseFloat(native.balance).toFixed(2) : '0.00'
   } catch {
     return '0.00'
@@ -45,7 +43,11 @@ export async function connectFreighter(): Promise<{ pubKey: string; balance: str
   if (!connected) {
     throw new Error('Freighter is not installed or connected.')
   }
-  const pubKey = await getPublicKey()
+  const accessRes = await requestAccess()
+  if (accessRes.error) {
+    throw new Error(accessRes.error)
+  }
+  const pubKey = accessRes.address
   if (!pubKey) return null
   const balance = await fetchBalance(pubKey)
   return { pubKey, balance }
@@ -78,12 +80,17 @@ export async function invokeContract(
 
   // Sign with Freighter
   const signedXdr = await signTransaction(preparedTx.toXDR(), {
-    network: 'TESTNET',
+    networkPassphrase: NETWORK_PASSPHRASE,
   })
   
-  const signedTx = TransactionBuilder.fromXDR(signedXdr, NETWORK_PASSPHRASE)
+  if (signedXdr.error) {
+    throw new Error(`Freighter error: ${signedXdr.error}`)
+  }
 
-  const sendResult = await rpc.sendTransaction(signedTx as any)
+  const signedTx = TransactionBuilder.fromXDR(signedXdr.signedTxXdr, NETWORK_PASSPHRASE)
+
+  // Cast to standard Transaction type expected by Soroban SDK if needed
+  const sendResult = await rpc.sendTransaction(signedTx as import('@stellar/stellar-sdk').Transaction)
   if (sendResult.status === 'ERROR') {
     throw new Error(`Send failed: ${sendResult.errorResult}`)
   }

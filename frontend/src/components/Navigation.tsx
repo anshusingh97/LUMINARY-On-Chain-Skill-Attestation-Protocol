@@ -21,8 +21,8 @@ export default function Navigation() {
         setWallet(wallet.pubKey, wallet.balance)
         addNotification('success', 'Wallet connected securely')
       }
-    } catch (err: any) {
-      addNotification('error', err.message || 'Failed to connect Freighter')
+    } catch (err: unknown) {
+      addNotification('error', err instanceof Error ? err.message : 'Failed to connect Freighter')
     }
   }
 
