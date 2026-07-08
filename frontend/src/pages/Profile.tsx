@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { Keypair } from '@stellar/stellar-sdk'
 import { Wallet, RefreshCw, Eye, EyeOff, Loader2, Copy, ExternalLink } from 'lucide-react'
 import { useLuminaryStore } from '../lib/store'
 import TierBadge from '../components/TierBadge'
 import LevelPips from '../components/LevelPips'
 import { MOCK_ATTESTATIONS, truncateAddress } from '../lib/mockData'
 import { TIER_COLORS } from '../lib/constants'
+import { connectFreighter } from '../lib/stellar'
 
 export default function Profile() {
   const {
@@ -16,36 +16,29 @@ export default function Profile() {
     addNotification,
   } = useLuminaryStore()
 
-  const [secretInput, setSecretInput] = useState('')
-  const [showSecret, setShowSecret]   = useState(false)
   const [isLoading, setIsLoading]     = useState(false)
 
   const handleConnect = async () => {
     setIsLoading(true)
     try {
-      let kp: Keypair
-      if (secretInput.trim()) {
-        kp = Keypair.fromSecret(secretInput.trim())
-      } else {
-        kp = Keypair.random()
-        addNotification('info', 'Generated a new testnet keypair. Save your secret key!')
-      }
-      setWallet(kp.secret(), kp.publicKey())
-      // Load mock data
-      setAttestations(MOCK_ATTESTATIONS.filter(a => a.subject === MOCK_ATTESTATIONS[0].subject))
-      setScore({
-        subject: kp.publicKey(),
+      const wallet = await connectFreighter()
+      if (wallet) {
+        setWallet(wallet.pubKey, wallet.balance)
+        // Load mock data
+        setAttestations(MOCK_ATTESTATIONS.filter(a => a.subject === MOCK_ATTESTATIONS[0].subject))
+        setScore({
+          subject: wallet.pubKey,
         score: 0,
         tier: 'Unranked',
         attestation_count: 0,
         last_updated: Date.now() / 1000,
       })
-      addNotification('success', 'Wallet connected successfully!')
-    } catch {
-      addNotification('error', 'Invalid secret key format')
+        addNotification('success', 'Freighter connected successfully!')
+      }
+    } catch (err: any) {
+      addNotification('error', err.message || 'Failed to connect Freighter')
     } finally {
       setIsLoading(false)
-      setSecretInput('')
     }
   }
 
@@ -80,28 +73,13 @@ export default function Profile() {
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-pulsar/20 to-nova/20 border border-pulsar/20 flex items-center justify-center mx-auto mb-4">
             <Wallet size={28} className="text-pulsar" />
           </div>
-          <h1 className="font-display font-bold text-3xl text-star mb-2">Connect Wallet</h1>
-          <p className="text-muted text-sm">Enter your Stellar secret key to interact with Luminary, or generate a new testnet keypair.</p>
+          <h1 className="font-display font-bold text-3xl text-star mb-2">Connect Freighter</h1>
+          <p className="text-muted text-sm">Connect your Freighter browser extension to securely interact with Luminary on the Stellar Testnet.</p>
         </div>
 
         <div className="glass-card p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-display font-medium text-star mb-2">Secret Key</label>
-            <div className="relative">
-              <input
-                type={showSecret ? 'text' : 'password'}
-                className="input-field pr-10 font-mono text-sm"
-                placeholder="S... (leave empty to generate new)"
-                value={secretInput}
-                onChange={e => setSecretInput(e.target.value)}
-              />
-              <button
-                onClick={() => setShowSecret(s => !s)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-dim hover:text-star"
-              >
-                {showSecret ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
+          <div className="text-center">
+            <p className="text-sm font-display font-medium text-star mb-4">Please ensure you have the Freighter extension installed and unlocked.</p>
           </div>
 
           <div className="text-xs text-dim bg-white/[0.03] rounded-lg p-3 border border-white/[0.05]">
@@ -115,7 +93,7 @@ export default function Profile() {
           >
             {isLoading
               ? <><Loader2 size={16} className="animate-spin" /> Connecting…</>
-              : secretInput ? 'Connect Wallet' : 'Generate & Connect'
+              : 'Connect Freighter'
             }
           </button>
         </div>

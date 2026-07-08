@@ -1,6 +1,7 @@
 import { Compass, Star, User, Trophy, Zap } from 'lucide-react'
 import { useLuminaryStore } from '../lib/store'
 import { truncateAddress } from '../lib/mockData'
+import { connectFreighter } from '../lib/stellar'
 import { clsx } from 'clsx'
 
 const TABS = [
@@ -11,7 +12,19 @@ const TABS = [
 ] as const
 
 export default function Navigation() {
-  const { activeTab, setTab, isConnected, walletPubKey, disconnect } = useLuminaryStore()
+  const { activeTab, setTab, isConnected, walletPubKey, walletBalance, disconnect, setWallet, addNotification } = useLuminaryStore()
+
+  const handleConnect = async () => {
+    try {
+      const wallet = await connectFreighter()
+      if (wallet) {
+        setWallet(wallet.pubKey, wallet.balance)
+        addNotification('success', 'Wallet connected securely')
+      }
+    } catch (err: any) {
+      addNotification('error', err.message || 'Failed to connect Freighter')
+    }
+  }
 
   return (
     <nav className="sticky top-0 z-40 w-full backdrop-blur-xl border-b border-white/[0.06]"
@@ -62,17 +75,21 @@ export default function Navigation() {
         {/* Wallet */}
         {isConnected ? (
           <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-2 glass-card px-3 py-1.5">
-              <div className="w-2 h-2 rounded-full bg-quasar animate-pulse" />
-              <span className="text-xs font-mono text-muted">{truncateAddress(walletPubKey)}</span>
+            <div className="hidden sm:flex items-center gap-3 glass-card px-3 py-1.5">
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-quasar animate-pulse" />
+                <span className="text-xs font-mono text-muted">{truncateAddress(walletPubKey)}</span>
+              </div>
+              <div className="w-px h-3 bg-white/[0.1]"></div>
+              <span className="text-xs font-mono font-medium text-pulsar">{walletBalance} XLM</span>
             </div>
             <button onClick={disconnect} className="btn-ghost text-sm py-1.5 px-3">
               Disconnect
             </button>
           </div>
         ) : (
-          <button onClick={() => setTab('profile')} className="btn-primary text-sm">
-            Connect Wallet
+          <button onClick={handleConnect} className="btn-primary text-sm hover:scale-105 transition-transform">
+            Connect Freighter
           </button>
         )}
       </div>

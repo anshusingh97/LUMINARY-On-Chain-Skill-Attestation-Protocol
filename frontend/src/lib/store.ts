@@ -21,10 +21,10 @@ export interface ReputationScore {
 
 interface LuminaryStore {
   // Wallet
-  walletKey:    string
   walletPubKey: string
+  walletBalance: string
   isConnected:  boolean
-  setWallet:    (secretKey: string, pubKey: string) => void
+  setWallet:    (pubKey: string, balance: string) => void
   disconnect:   () => void
 
   // Attestations
@@ -50,11 +50,11 @@ interface LuminaryStore {
 }
 
 export const useLuminaryStore = create<LuminaryStore>((set, get) => ({
-  walletKey:    '',
   walletPubKey: '',
+  walletBalance: '0.00',
   isConnected:  false,
-  setWallet: (secretKey, pubKey) => set({ walletKey: secretKey, walletPubKey: pubKey, isConnected: true }),
-  disconnect:   () => set({ walletKey: '', walletPubKey: '', isConnected: false, score: null, attestations: [] }),
+  setWallet: (pubKey, balance) => set({ walletPubKey: pubKey, walletBalance: balance, isConnected: true }),
+  disconnect:   () => set({ walletPubKey: '', walletBalance: '0.00', isConnected: false, score: null, attestations: [] }),
 
   attestations:     [],
   isLoadingAttest:  false,

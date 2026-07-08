@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Star, CheckCircle, Loader2, Info } from 'lucide-react'
 import { useLuminaryStore } from '../lib/store'
 import { SKILL_CATEGORIES } from '../lib/constants'
+import { issueAttestation } from '../lib/stellar'
 import LevelPips from '../components/LevelPips'
 import { clsx } from 'clsx'
 
@@ -47,12 +48,9 @@ export default function Attest() {
 
     setIsSubmitting(true)
     try {
-      // Simulate transaction (replace with real call in production)
-      await new Promise(r => setTimeout(r, 2000))
-      const mockId   = Math.floor(Math.random() * 9000 + 1000).toString()
-      const mockHash = Array.from({ length: 64 }, () => '0123456789abcdef'[Math.floor(Math.random() * 16)]).join('')
-      setSubmitted({ id: mockId, txHash: mockHash })
-      addNotification('success', `Attestation #${mockId} issued successfully!`)
+      const res = await issueAttestation(walletPubKey, form.subject, skillName, form.level)
+      setSubmitted({ id: res.id, txHash: res.txHash })
+      addNotification('success', `Attestation #${res.id} issued successfully!`)
     } catch (err) {
       addNotification('error', `Transaction failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
     } finally {

@@ -3,12 +3,16 @@ import {
   TransactionBuilder,
   BASE_FEE,
   Contract,
-  Keypair,
   Address,
   nativeToScVal,
   scValToNative,
   xdr,
 } from '@stellar/stellar-sdk'
+import {
+  isConnected,
+  getPublicKey,
+  signTransaction,
+} from '@stellar/freighter-api'
 
 import {
   SOROBAN_RPC_URL,
@@ -21,9 +25,30 @@ import {
 export const rpc = new SorobanRpc.Server(SOROBAN_RPC_URL, { allowHttp: false })
 
 // ─── Friendbot ────────────────────────────────────────────────────────────────
-export async function fundTestnetAccount(publicKey: string): Promise<void> {
-  const res = await fetch(`${FRIENDBOT_URL}?addr=${publicKey}`)
-  if (!res.ok) throw new Error('Friendbot funding failed')
+export async function fetchBalance(publicKey: string): Promise<string> {
+  try {
+    const account = await rpc.getAccount(publicKey)
+    // For testnet, returning native XLM balance (approximate if native logic used, but Soroban doesn't expose classic balances via getAccount directly)
+    // So we usually rely on Horizon. Let's use simple Horizon fetch for balance.
+    const res = await fetch(`https://horizon-testnet.stellar.org/accounts/${publicKey}`)
+    if (!res.ok) return '0.00'
+    const data = await res.json()
+    const native = data.balances.find((b: any) => b.asset_type === 'native')
+    return native ? parseFloat(native.balance).toFixed(2) : '0.00'
+  } catch {
+    return '0.00'
+  }
+}
+
+export async function connectFreighter(): Promise<{ pubKey: string; balance: string } | null> {
+  const connected = await isConnected()
+  if (!connected) {
+    throw new Error('Freighter is not installed or connected.')
+  }
+  const pubKey = await getPublicKey()
+  if (!pubKey) return null
+  const balance = await fetchBalance(pubKey)
+  return { pubKey, balance }
 }
 
 // ─── Build + submit a Soroban transaction ────────────────────────────────────
@@ -31,9 +56,9 @@ export async function invokeContract(
   contractId: string,
   method: string,
   args: xdr.ScVal[],
-  keypair: Keypair
+  sourcePublicKey: string
 ): Promise<unknown> {
-  const account = await rpc.getAccount(keypair.publicKey())
+  const account = await rpc.getAccount(sourcePublicKey)
   const contract = new Contract(contractId)
 
   const tx = new TransactionBuilder(account, {
@@ -50,9 +75,15 @@ export async function invokeContract(
   }
 
   const preparedTx = SorobanRpc.assembleTransaction(tx, sim).build()
-  preparedTx.sign(keypair)
 
-  const sendResult = await rpc.sendTransaction(preparedTx)
+  // Sign with Freighter
+  const signedXdr = await signTransaction(preparedTx.toXDR(), {
+    network: 'TESTNET',
+  })
+  
+  const signedTx = TransactionBuilder.fromXDR(signedXdr, NETWORK_PASSPHRASE)
+
+  const sendResult = await rpc.sendTransaction(signedTx as any)
   if (sendResult.status === 'ERROR') {
     throw new Error(`Send failed: ${sendResult.errorResult}`)
   }
@@ -133,13 +164,13 @@ export async function getReputationScore(subject: string, sourceKey: string) {
 }
 
 export async function issueAttestation(
-  attester: Keypair,
+  attesterPubKey: string,
   subject: string,
   skill: string,
   level: number
 ): Promise<{ id: string; txHash: string }> {
   const args = [
-    new Address(attester.publicKey()).toScVal(),
+    new Address(attesterPubKey).toScVal(),
     new Address(subject).toScVal(),
     nativeToScVal(skill, { type: 'string' }),
     nativeToScVal(level, { type: 'u32' }),
@@ -149,14 +180,14 @@ export async function issueAttestation(
     ATTESTATION_REGISTRY_ID,
     'attest',
     args,
-    attester
+    attesterPubKey
   ) as { result: unknown, txHash: string }
 
   return { id: String(res.result), txHash: res.txHash }
 }
 
 export async function computeReputationScore(
-  caller: Keypair,
+  callerPubKey: string,
   subject: string
 ): Promise<Record<string, unknown>> {
   const args = [new Address(subject).toScVal()]
@@ -164,7 +195,7 @@ export async function computeReputationScore(
     REPUTATION_SCORER_ID,
     'compute_score',
     args,
-    caller
+    callerPubKey
   ) as { result: unknown, txHash: string }
   return res.result as Record<string, unknown>
 }
