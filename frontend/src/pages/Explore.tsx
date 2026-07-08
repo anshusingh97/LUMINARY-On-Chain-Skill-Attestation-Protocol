@@ -1,7 +1,6 @@
 import { ArrowRight, Shield, Zap, Users, Star } from 'lucide-react'
 import { useLuminaryStore } from '../lib/store'
-import TierBadge from '../components/TierBadge'
-import { MOCK_LEADERBOARD, MOCK_ATTESTATIONS, truncateAddress, tierToEmoji } from '../lib/mockData'
+import { MOCK_ATTESTATIONS, truncateAddress, tierToEmoji } from '../lib/mockData'
 import { TIER_COLORS } from '../lib/constants'
 import LevelPips from '../components/LevelPips'
 

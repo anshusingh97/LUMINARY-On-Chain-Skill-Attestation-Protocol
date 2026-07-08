@@ -1,7 +1,6 @@
 import {
   SorobanRpc,
   TransactionBuilder,
-  Networks,
   BASE_FEE,
   Contract,
   Keypair,

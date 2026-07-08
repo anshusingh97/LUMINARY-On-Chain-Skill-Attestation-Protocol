@@ -41,10 +41,13 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('contracts/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
 
-      - name: Install Soroban CLI
+      - name: Install cargo-binstall
+        run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+
+      - name: Install Stellar CLI
         run: |
-          cargo install --locked soroban-cli --features opt 2>/dev/null || true
-          soroban --version
+          cargo binstall --no-confirm stellar-cli
+          stellar --version
 
       - name: Check formatting
         run: cargo fmt --all -- --check
@@ -63,12 +66,12 @@ jobs:
           cargo build --target wasm32-unknown-unknown --release -p attestation-registry
           cargo build --target wasm32-unknown-unknown --release -p reputation-scorer
 
-      - name: Optimize WASM (soroban optimize)
+      - name: Optimize WASM (stellar contract optimize)
         run: |
-          soroban contract optimize \
+          stellar contract optimize \
             --wasm target/wasm32-unknown-unknown/release/attestation_registry.wasm \
             --wasm-out target/wasm32-unknown-unknown/release/attestation_registry.optimized.wasm
-          soroban contract optimize \
+          stellar contract optimize \
             --wasm target/wasm32-unknown-unknown/release/reputation_scorer.wasm \
             --wasm-out target/wasm32-unknown-unknown/release/reputation_scorer.optimized.wasm
 
@@ -155,25 +158,28 @@ jobs:
           name: wasm-contracts
           path: contracts/target/wasm32-unknown-unknown/release/
 
-      - name: Install Soroban CLI
-        run: cargo install --locked soroban-cli --features opt 2>/dev/null || true
+      - name: Install cargo-binstall
+        run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
 
-      - name: Configure Soroban network
+      - name: Install Stellar CLI
+        run: cargo binstall --no-confirm stellar-cli
+
+      - name: Configure Stellar network
         run: |
-          soroban network add \
+          stellar network add \
             --rpc-url https://soroban-testnet.stellar.org \
             --network-passphrase "Test SDF Network ; September 2015" \
             testnet || true
 
       - name: Fund deployer account
         run: |
-          soroban keys generate deployer --network testnet 2>/dev/null || true
-          curl -s "https://friendbot.stellar.org?addr=$(soroban keys address deployer)" | jq .
+          stellar keys generate deployer --network testnet 2>/dev/null || true
+          curl -s "https://friendbot.stellar.org?addr=$(stellar keys address deployer)" | jq .
 
       - name: Deploy AttestationRegistry
         id: deploy-registry
         run: |
-          REGISTRY_ID=$(soroban contract deploy \
+          REGISTRY_ID=$(stellar contract deploy \
             --wasm target/wasm32-unknown-unknown/release/attestation_registry.optimized.wasm \
             --source deployer \
             --network testnet)
@@ -183,7 +189,7 @@ jobs:
       - name: Deploy ReputationScorer
         id: deploy-scorer
         run: |
-          SCORER_ID=$(soroban contract deploy \
+          SCORER_ID=$(stellar contract deploy \
             --wasm target/wasm32-unknown-unknown/release/reputation_scorer.optimized.wasm \
             --source deployer \
             --network testnet)
@@ -192,12 +198,12 @@ jobs:
 
       - name: Initialize contracts
         run: |
-          DEPLOYER_ADDR=$(soroban keys address deployer)
+          DEPLOYER_ADDR=$(stellar keys address deployer)
           REGISTRY_ID="${{ steps.deploy-registry.outputs.REGISTRY_ID }}"
           SCORER_ID="${{ steps.deploy-scorer.outputs.SCORER_ID }}"
 
           # Initialize AttestationRegistry
-          soroban contract invoke \
+          stellar contract invoke \
             --id "$REGISTRY_ID" \
             --source deployer \
             --network testnet \
@@ -206,7 +212,7 @@ jobs:
             --scorer_address "$SCORER_ID"
 
           # Initialize ReputationScorer
-          soroban contract invoke \
+          stellar contract invoke \
             --id "$SCORER_ID" \
             --source deployer \
             --network testnet \

@@ -9,7 +9,7 @@ import { TIER_COLORS } from '../lib/constants'
 
 export default function Profile() {
   const {
-    isConnected, walletPubKey, walletKey,
+    isConnected, walletPubKey,
     setWallet, disconnect,
     score, setScore, setLoadingScore,
     attestations, setAttestations,

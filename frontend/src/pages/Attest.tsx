@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Star, AlertCircle, CheckCircle, Loader2, Info } from 'lucide-react'
+import { Star, CheckCircle, Loader2, Info } from 'lucide-react'
 import { useLuminaryStore } from '../lib/store'
 import { SKILL_CATEGORIES } from '../lib/constants'
 import LevelPips from '../components/LevelPips'

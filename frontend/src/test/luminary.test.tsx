@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { describe, it, expect } from 'vitest'
+import { render, screen } from '@testing-library/react'
 import { truncateAddress, tierToEmoji, MOCK_ATTESTATIONS, MOCK_LEADERBOARD } from '../lib/mockData'
 import { TIER_COLORS } from '../lib/constants'
 import TierBadge from '../components/TierBadge'
