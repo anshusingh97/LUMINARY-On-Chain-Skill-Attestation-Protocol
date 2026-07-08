@@ -36,9 +36,9 @@ export default function Profile() {
             // Convert SC map to Attestation object
             const parsedAtts = atts.map((a: Record<string, unknown>) => ({
               id: Number(a.id),
-              attester: a.attester,
-              subject: a.subject,
-              skill: a.skill,
+              attester: String(a.attester),
+              subject: String(a.subject),
+              skill: String(a.skill),
               level: Number(a.level),
               timestamp: Number(a.timestamp),
               revoked: Boolean(a.revoked),
@@ -98,9 +98,9 @@ export default function Profile() {
       if (Array.isArray(atts)) {
         const parsedAtts = atts.map((a: Record<string, unknown>) => ({
           id: Number(a.id),
-          attester: a.attester,
-          subject: a.subject,
-          skill: a.skill,
+          attester: String(a.attester),
+          subject: String(a.subject),
+          skill: String(a.skill),
           level: Number(a.level),
           timestamp: Number(a.timestamp),
           revoked: Boolean(a.revoked),
