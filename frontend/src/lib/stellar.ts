@@ -65,7 +65,10 @@ export async function invokeContract(
   }
 
   if (getResponse.status === SorobanRpc.Api.GetTransactionStatus.SUCCESS) {
-    return getResponse.returnValue ? scValToNative(getResponse.returnValue) : null
+    return {
+      result: getResponse.returnValue ? scValToNative(getResponse.returnValue) : null,
+      txHash: sendResult.hash,
+    }
   }
 
   throw new Error(`Transaction failed: ${getResponse.status}`)
@@ -142,14 +145,14 @@ export async function issueAttestation(
     nativeToScVal(level, { type: 'u32' }),
   ]
 
-  const result = await invokeContract(
+  const res = await invokeContract(
     ATTESTATION_REGISTRY_ID,
     'attest',
     args,
     attester
-  )
+  ) as { result: unknown, txHash: string }
 
-  return { id: String(result), txHash: '' }
+  return { id: String(res.result), txHash: res.txHash }
 }
 
 export async function computeReputationScore(
@@ -157,11 +160,11 @@ export async function computeReputationScore(
   subject: string
 ): Promise<Record<string, unknown>> {
   const args = [new Address(subject).toScVal()]
-  const result = await invokeContract(
+  const res = await invokeContract(
     REPUTATION_SCORER_ID,
     'compute_score',
     args,
     caller
-  )
-  return result as Record<string, unknown>
+  ) as { result: unknown, txHash: string }
+  return res.result as Record<string, unknown>
 }
