@@ -1,12 +1,12 @@
 import {
-  SorobanRpc,
+  Address,
+  Contract,
   TransactionBuilder,
   BASE_FEE,
-  Contract,
-  Address,
   nativeToScVal,
   scValToNative,
   xdr,
+  rpc as StellarRpc,
 } from '@stellar/stellar-sdk'
 import {
   isConnected,
@@ -21,7 +21,7 @@ import {
   REPUTATION_SCORER_ID,
 } from './constants'
 
-export const rpc = new SorobanRpc.Server(SOROBAN_RPC_URL, { allowHttp: false })
+export const rpc = new StellarRpc.Server(SOROBAN_RPC_URL, { allowHttp: false })
 
 // ─── Friendbot ────────────────────────────────────────────────────────────────
 export async function fetchBalance(publicKey: string): Promise<string> {
@@ -72,11 +72,11 @@ export async function invokeContract(
     .build()
 
   const sim = await rpc.simulateTransaction(tx)
-  if (SorobanRpc.Api.isSimulationError(sim)) {
+  if (StellarRpc.Api.isSimulationError(sim)) {
     throw new Error(`Simulation failed: ${sim.error}`)
   }
 
-  const preparedTx = SorobanRpc.assembleTransaction(tx, sim).build()
+  const preparedTx = StellarRpc.assembleTransaction(tx, sim).build()
 
   // Sign with Freighter
   const signedXdr = await signTransaction(preparedTx.toXDR(), {
@@ -97,12 +97,12 @@ export async function invokeContract(
 
   // Poll for completion
   let getResponse = await rpc.getTransaction(sendResult.hash)
-  while (getResponse.status === SorobanRpc.Api.GetTransactionStatus.NOT_FOUND) {
+  while (getResponse.status === StellarRpc.Api.GetTransactionStatus.NOT_FOUND) {
     await new Promise(r => setTimeout(r, 1000))
     getResponse = await rpc.getTransaction(sendResult.hash)
   }
 
-  if (getResponse.status === SorobanRpc.Api.GetTransactionStatus.SUCCESS) {
+  if (getResponse.status === StellarRpc.Api.GetTransactionStatus.SUCCESS) {
     return {
       result: getResponse.returnValue ? scValToNative(getResponse.returnValue) : null,
       txHash: sendResult.hash,
@@ -132,11 +132,11 @@ export async function simulateContractCall(
     .build()
 
   const sim = await rpc.simulateTransaction(tx)
-  if (SorobanRpc.Api.isSimulationError(sim)) {
+  if (StellarRpc.Api.isSimulationError(sim)) {
     throw new Error(`Simulation failed: ${sim.error}`)
   }
 
-  const result = (sim as SorobanRpc.Api.SimulateTransactionSuccessResponse).result
+  const result = (sim as StellarRpc.Api.SimulateTransactionSuccessResponse).result
   return result ? scValToNative(result.retval) : null
 }
 
