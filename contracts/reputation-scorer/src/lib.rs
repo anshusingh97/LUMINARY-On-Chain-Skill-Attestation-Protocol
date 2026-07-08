@@ -1,10 +1,8 @@
 #![no_std]
 
 use soroban_sdk::{
-    contract, contractimpl, contracttype, contractclient,
-    symbol_short, vec,
-    Address, Env, String, Symbol, Vec,
-    log,
+    contract, contractclient, contractimpl, contracttype, log, symbol_short, vec, Address, Env,
+    String, Symbol, Vec,
 };
 
 // ─── Inter-Contract Interface ─────────────────────────────────────────────────
@@ -31,7 +29,7 @@ pub trait AttestationRegistryInterface {
 
 // ─── Storage Keys ────────────────────────────────────────────────────────────
 
-const ADMIN: Symbol    = symbol_short!("ADMIN");
+const ADMIN: Symbol = symbol_short!("ADMIN");
 const REGISTRY: Symbol = symbol_short!("REGISTRY");
 
 #[contracttype]
@@ -67,8 +65,8 @@ pub struct ReputationScore {
 
 // ─── Events ──────────────────────────────────────────────────────────────────
 
-const SCORED: Symbol   = symbol_short!("SCORED");
-const TIER_UP: Symbol  = symbol_short!("TIER_UP");
+const SCORED: Symbol = symbol_short!("SCORED");
+const TIER_UP: Symbol = symbol_short!("TIER_UP");
 
 // ─── Contract ────────────────────────────────────────────────────────────────
 
@@ -77,7 +75,6 @@ pub struct ReputationScorer;
 
 #[contractimpl]
 impl ReputationScorer {
-
     pub fn initialize(env: Env, admin: Address, registry_address: Address) {
         if env.storage().instance().has(&ADMIN) {
             panic!("already initialized");
@@ -91,7 +88,9 @@ impl ReputationScorer {
     /// Compute and store a reputation score for a subject
     /// This calls into the AttestationRegistry (inter-contract communication)
     pub fn compute_score(env: Env, subject: Address) -> ReputationScore {
-        let registry_address: Address = env.storage().instance()
+        let registry_address: Address = env
+            .storage()
+            .instance()
             .get(&REGISTRY)
             .expect("not initialized");
 
@@ -100,7 +99,9 @@ impl ReputationScorer {
         let attestations = registry.get_active_attestations(&subject);
         // ────────────────────────────────────────────────────────────────────
 
-        let prev_tier = env.storage().persistent()
+        let prev_tier = env
+            .storage()
+            .persistent()
             .get(&DataKey::Tier(subject.clone()))
             .unwrap_or(Tier::Unranked);
 
@@ -117,29 +118,39 @@ impl ReputationScorer {
             last_updated: timestamp,
         };
 
-        let is_new = !env.storage().persistent().has(&DataKey::Score(subject.clone()));
+        let is_new = !env
+            .storage()
+            .persistent()
+            .has(&DataKey::Score(subject.clone()));
 
-        env.storage().persistent().set(&DataKey::Score(subject.clone()), &score);
-        env.storage().persistent().set(&DataKey::Tier(subject.clone()), &tier.clone());
-        env.storage().persistent().set(&DataKey::LastUpdated(subject.clone()), &timestamp);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Score(subject.clone()), &score);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Tier(subject.clone()), &tier.clone());
+        env.storage()
+            .persistent()
+            .set(&DataKey::LastUpdated(subject.clone()), &timestamp);
 
         if is_new {
-            let total: u32 = env.storage().instance().get(&DataKey::TotalScored).unwrap_or(0u32);
-            env.storage().instance().set(&DataKey::TotalScored, &(total + 1));
+            let total: u32 = env
+                .storage()
+                .instance()
+                .get(&DataKey::TotalScored)
+                .unwrap_or(0u32);
+            env.storage()
+                .instance()
+                .set(&DataKey::TotalScored, &(total + 1));
         }
 
         // Emit score event
-        env.events().publish(
-            (SCORED, subject.clone()),
-            (score, attestation_count),
-        );
+        env.events()
+            .publish((SCORED, subject.clone()), (score, attestation_count));
 
         // Emit tier-up event if tier improved
         if prev_tier != tier {
-            env.events().publish(
-                (TIER_UP, subject.clone()),
-                (score,),
-            );
+            env.events().publish((TIER_UP, subject.clone()), (score,));
         }
 
         log!(&env, "Score computed for subject: score={} tier", score);
@@ -193,25 +204,31 @@ impl ReputationScorer {
 
     fn score_to_tier(score: u64) -> Tier {
         match score {
-            0       => Tier::Unranked,
+            0 => Tier::Unranked,
             1..=199 => Tier::Apprentice,
             200..=499 => Tier::Practitioner,
             500..=799 => Tier::Expert,
             800..=999 => Tier::Master,
-            _         => Tier::Luminary,
+            _ => Tier::Luminary,
         }
     }
 
     // ─── Query Methods ───────────────────────────────────────────────────────
 
     pub fn get_score(env: Env, subject: Address) -> ReputationScore {
-        let score: u64 = env.storage().persistent()
+        let score: u64 = env
+            .storage()
+            .persistent()
             .get(&DataKey::Score(subject.clone()))
             .unwrap_or(0u64);
-        let tier: Tier = env.storage().persistent()
+        let tier: Tier = env
+            .storage()
+            .persistent()
             .get(&DataKey::Tier(subject.clone()))
             .unwrap_or(Tier::Unranked);
-        let last_updated: u64 = env.storage().persistent()
+        let last_updated: u64 = env
+            .storage()
+            .persistent()
             .get(&DataKey::LastUpdated(subject.clone()))
             .unwrap_or(0u64);
 
@@ -225,7 +242,10 @@ impl ReputationScorer {
     }
 
     pub fn get_total_scored(env: Env) -> u32 {
-        env.storage().instance().get(&DataKey::TotalScored).unwrap_or(0u32)
+        env.storage()
+            .instance()
+            .get(&DataKey::TotalScored)
+            .unwrap_or(0u32)
     }
 
     pub fn get_admin(env: Env) -> Address {

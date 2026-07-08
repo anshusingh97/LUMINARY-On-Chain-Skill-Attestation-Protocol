@@ -1,9 +1,8 @@
 #![no_std]
 
 use soroban_sdk::{
-    contract, contractimpl, contracttype, symbol_short, vec,
-    Address, Env, String, Symbol, Vec, Map,
-    log, events,
+    contract, contractimpl, contracttype, events, log, symbol_short, vec, Address, Env, Map,
+    String, Symbol, Vec,
 };
 
 // ─── Storage Keys ────────────────────────────────────────────────────────────
@@ -20,7 +19,7 @@ pub struct Attestation {
     pub attester: Address,
     pub subject: Address,
     pub skill: String,
-    pub level: u32,        // 1-5 proficiency level
+    pub level: u32, // 1-5 proficiency level
     pub timestamp: u64,
     pub revoked: bool,
     pub endorsement_count: u32,
@@ -44,9 +43,9 @@ pub enum DataKey {
 
 // ─── Events ──────────────────────────────────────────────────────────────────
 
-const ATTESTED: Symbol   = symbol_short!("ATTESTED");
+const ATTESTED: Symbol = symbol_short!("ATTESTED");
 const REVOKED_EV: Symbol = symbol_short!("REVOKED");
-const ENDORSED: Symbol   = symbol_short!("ENDORSED");
+const ENDORSED: Symbol = symbol_short!("ENDORSED");
 
 // ─── Contract ────────────────────────────────────────────────────────────────
 
@@ -55,7 +54,6 @@ pub struct AttestationRegistry;
 
 #[contractimpl]
 impl AttestationRegistry {
-
     /// Initialize the registry with an admin and optional reputation scorer address
     pub fn initialize(env: Env, admin: Address, scorer_address: Address) {
         if env.storage().instance().has(&ADMIN) {
@@ -68,7 +66,9 @@ impl AttestationRegistry {
 
         // Initialize trusted attesters list
         let trusted: Vec<Address> = vec![&env];
-        env.storage().instance().set(&DataKey::TrustedAttesters, &trusted);
+        env.storage()
+            .instance()
+            .set(&DataKey::TrustedAttesters, &trusted);
     }
 
     /// Add a trusted attester (only admin)
@@ -76,21 +76,19 @@ impl AttestationRegistry {
         let admin: Address = env.storage().instance().get(&ADMIN).unwrap();
         admin.require_auth();
 
-        let mut trusted: Vec<Address> = env.storage().instance()
+        let mut trusted: Vec<Address> = env
+            .storage()
+            .instance()
             .get(&DataKey::TrustedAttesters)
             .unwrap_or(vec![&env]);
         trusted.push_back(attester);
-        env.storage().instance().set(&DataKey::TrustedAttesters, &trusted);
+        env.storage()
+            .instance()
+            .set(&DataKey::TrustedAttesters, &trusted);
     }
 
     /// Issue a skill attestation for a subject
-    pub fn attest(
-        env: Env,
-        attester: Address,
-        subject: Address,
-        skill: String,
-        level: u32,
-    ) -> u64 {
+    pub fn attest(env: Env, attester: Address, subject: Address, skill: String, level: u32) -> u64 {
         attester.require_auth();
 
         // Validate level range
@@ -103,7 +101,11 @@ impl AttestationRegistry {
             panic!("cannot self-attest");
         }
 
-        let id: u64 = env.storage().instance().get(&DataKey::NextId).unwrap_or(0u64);
+        let id: u64 = env
+            .storage()
+            .instance()
+            .get(&DataKey::NextId)
+            .unwrap_or(0u64);
         let timestamp = env.ledger().timestamp();
 
         let attestation = Attestation {
@@ -118,21 +120,33 @@ impl AttestationRegistry {
         };
 
         // Store attestation
-        env.storage().persistent().set(&DataKey::Attestation(id), &attestation);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Attestation(id), &attestation);
 
         // Update subject's attestation list
-        let mut subject_list: Vec<u64> = env.storage().persistent()
+        let mut subject_list: Vec<u64> = env
+            .storage()
+            .persistent()
             .get(&DataKey::SubjectAttestations(subject.clone()))
             .unwrap_or(vec![&env]);
         subject_list.push_back(id);
-        env.storage().persistent().set(&DataKey::SubjectAttestations(subject.clone()), &subject_list);
+        env.storage().persistent().set(
+            &DataKey::SubjectAttestations(subject.clone()),
+            &subject_list,
+        );
 
         // Update attester's given list
-        let mut attester_list: Vec<u64> = env.storage().persistent()
+        let mut attester_list: Vec<u64> = env
+            .storage()
+            .persistent()
             .get(&DataKey::AttesterAttestations(attester.clone()))
             .unwrap_or(vec![&env]);
         attester_list.push_back(id);
-        env.storage().persistent().set(&DataKey::AttesterAttestations(attester.clone()), &attester_list);
+        env.storage().persistent().set(
+            &DataKey::AttesterAttestations(attester.clone()),
+            &attester_list,
+        );
 
         // Increment ID counter
         env.storage().instance().set(&DataKey::NextId, &(id + 1));
@@ -143,7 +157,14 @@ impl AttestationRegistry {
             (id, subject.clone(), skill.clone(), level),
         );
 
-        log!(&env, "Attestation issued: id={} subject={} skill={} level={}", id, subject, skill, level);
+        log!(
+            &env,
+            "Attestation issued: id={} subject={} skill={} level={}",
+            id,
+            subject,
+            skill,
+            level
+        );
 
         id
     }
@@ -152,7 +173,9 @@ impl AttestationRegistry {
     pub fn revoke(env: Env, attester: Address, attestation_id: u64) {
         attester.require_auth();
 
-        let mut attestation: Attestation = env.storage().persistent()
+        let mut attestation: Attestation = env
+            .storage()
+            .persistent()
             .get(&DataKey::Attestation(attestation_id))
             .expect("attestation not found");
 
@@ -164,19 +187,21 @@ impl AttestationRegistry {
         }
 
         attestation.revoked = true;
-        env.storage().persistent().set(&DataKey::Attestation(attestation_id), &attestation);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Attestation(attestation_id), &attestation);
 
-        env.events().publish(
-            (REVOKED_EV, attester),
-            (attestation_id,),
-        );
+        env.events()
+            .publish((REVOKED_EV, attester), (attestation_id,));
     }
 
     /// Endorse an existing attestation
     pub fn endorse(env: Env, endorser: Address, attestation_id: u64) {
         endorser.require_auth();
 
-        let mut attestation: Attestation = env.storage().persistent()
+        let mut attestation: Attestation = env
+            .storage()
+            .persistent()
             .get(&DataKey::Attestation(attestation_id))
             .expect("attestation not found");
 
@@ -188,7 +213,9 @@ impl AttestationRegistry {
         }
 
         attestation.endorsement_count += 1;
-        env.storage().persistent().set(&DataKey::Attestation(attestation_id), &attestation);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Attestation(attestation_id), &attestation);
 
         env.events().publish(
             (ENDORSED, endorser),
@@ -199,13 +226,16 @@ impl AttestationRegistry {
     // ─── Query Methods ───────────────────────────────────────────────────────
 
     pub fn get_attestation(env: Env, id: u64) -> Attestation {
-        env.storage().persistent()
+        env.storage()
+            .persistent()
             .get(&DataKey::Attestation(id))
             .expect("attestation not found")
     }
 
     pub fn get_subject_attestations(env: Env, subject: Address) -> Vec<Attestation> {
-        let ids: Vec<u64> = env.storage().persistent()
+        let ids: Vec<u64> = env
+            .storage()
+            .persistent()
             .get(&DataKey::SubjectAttestations(subject.clone()))
             .unwrap_or(vec![&env]);
 
@@ -230,14 +260,19 @@ impl AttestationRegistry {
     }
 
     pub fn get_attestation_count(env: Env, subject: Address) -> u32 {
-        let ids: Vec<u64> = env.storage().persistent()
+        let ids: Vec<u64> = env
+            .storage()
+            .persistent()
             .get(&DataKey::SubjectAttestations(subject))
             .unwrap_or(vec![&env]);
         ids.len()
     }
 
     pub fn get_total_attestations(env: Env) -> u64 {
-        env.storage().instance().get(&DataKey::NextId).unwrap_or(0u64)
+        env.storage()
+            .instance()
+            .get(&DataKey::NextId)
+            .unwrap_or(0u64)
     }
 
     pub fn get_admin(env: Env) -> Address {
