@@ -1,0 +1,22 @@
+# Rust
+target/
+Cargo.lock
+
+# Node
+node_modules/
+dist/
+.env.local
+.env.*.local
+
+# Soroban
+*.wasm
+!*.optimized.wasm
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Deployment secrets
+deployment/testnet.json

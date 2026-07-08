@@ -1,0 +1,134 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: #07080F;
+    color: #E8D9A0;
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: #07080F; }
+  ::-webkit-scrollbar-thumb { background: #4B5580; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #A78BFA; }
+}
+
+@layer components {
+  .glass-card {
+    @apply relative overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.03] backdrop-blur-sm;
+    background: linear-gradient(135deg, rgba(167,139,250,0.06) 0%, rgba(96,165,250,0.03) 100%);
+  }
+
+  .glass-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(167,139,250,0.06) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    border-radius: inherit;
+  }
+
+  .glass-card:hover::before { opacity: 1; }
+
+  .btn-primary {
+    @apply relative overflow-hidden rounded-xl px-6 py-3 font-display font-semibold text-void transition-all duration-200;
+    background: linear-gradient(135deg, #A78BFA, #60A5FA);
+    box-shadow: 0 0 20px rgba(167,139,250,0.3);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 0 30px rgba(167,139,250,0.5);
+  }
+
+  .btn-primary:active { transform: translateY(0); }
+
+  .btn-ghost {
+    @apply rounded-xl border border-white/10 px-6 py-3 font-display font-medium text-muted transition-all duration-200 hover:border-pulsar/40 hover:text-star;
+  }
+
+  .input-field {
+    @apply w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 font-body text-star placeholder:text-dim focus:border-pulsar/50 focus:outline-none focus:ring-1 focus:ring-pulsar/30 transition-all duration-200;
+  }
+
+  .tier-badge {
+    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-display font-semibold;
+  }
+
+  .star-field {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+  }
+}
+
+/* Constellation lines */
+.constellation {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0; left: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Level pips */
+.level-pip {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.level-pip.filled { background: #A78BFA; box-shadow: 0 0 6px rgba(167,139,250,0.6); }
+.level-pip.empty  { background: #4B5580; }
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #A78BFA 0%, #60A5FA 50%, #34D399 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Animated border */
+@keyframes border-rotate {
+  from { --angle: 0deg; }
+  to   { --angle: 360deg; }
+}
+
+.animated-border {
+  position: relative;
+}
+
+.animated-border::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: conic-gradient(from var(--angle, 0deg), transparent 70%, rgba(167,139,250,0.5) 85%, transparent 100%);
+  animation: border-rotate 4s linear infinite;
+  z-index: -1;
+}
+
+@property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
