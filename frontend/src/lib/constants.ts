@@ -3,11 +3,11 @@ export const SOROBAN_RPC_URL   = 'https://soroban-testnet.stellar.org'
 export const HORIZON_URL       = 'https://horizon-testnet.stellar.org'
 export const FRIENDBOT_URL     = 'https://friendbot.stellar.org'
 
-// Deployed contract addresses (testnet — update after deployment)
+// Deployed contract addresses (testnet)
 export const ATTESTATION_REGISTRY_ID = import.meta.env.VITE_ATTESTATION_REGISTRY_ID ||
-  'CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM'
+  'CCBIDUNXHQG2ZLKYQ3WRPPQBOYK3KLGYJTKZQI6LLRFDSXU2VW25MYUG'
 export const REPUTATION_SCORER_ID    = import.meta.env.VITE_REPUTATION_SCORER_ID    ||
-  'CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM'
+  'CCHSVXYKCYDQTP7MUTGNLIFREUPU7IVPLKCHGHKHLHXQKAQMPZ6JGJBL'
 
 export const TIER_LABELS: Record<string, string> = {
   Unranked:     'Unranked',
