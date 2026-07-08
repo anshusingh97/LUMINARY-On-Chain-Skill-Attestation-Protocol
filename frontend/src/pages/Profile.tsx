@@ -3,7 +3,7 @@ import { Wallet, RefreshCw, Loader2, Copy, ExternalLink } from 'lucide-react'
 import { useLuminaryStore } from '../lib/store'
 import TierBadge from '../components/TierBadge'
 import LevelPips from '../components/LevelPips'
-import { MOCK_ATTESTATIONS, truncateAddress } from '../lib/mockData'
+import { truncateAddress } from '../lib/mockData'
 import { TIER_COLORS } from '../lib/constants'
 import { connectFreighter, getSubjectAttestations, getReputationScore } from '../lib/stellar'
 
@@ -34,7 +34,7 @@ export default function Profile() {
           
           if (Array.isArray(atts)) {
             // Convert SC map to Attestation object
-            const parsedAtts = atts.map((a: any) => ({
+            const parsedAtts = atts.map((a: Record<string, unknown>) => ({
               id: Number(a.id),
               attester: a.attester,
               subject: a.subject,
@@ -96,7 +96,7 @@ export default function Profile() {
       ])
 
       if (Array.isArray(atts)) {
-        const parsedAtts = atts.map((a: any) => ({
+        const parsedAtts = atts.map((a: Record<string, unknown>) => ({
           id: Number(a.id),
           attester: a.attester,
           subject: a.subject,
