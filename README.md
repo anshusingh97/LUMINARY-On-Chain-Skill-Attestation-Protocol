@@ -9,7 +9,7 @@ Luminary is a decentralized reputation and skill attestation platform built on S
 ## 💎 Smart Contract Deployments (Testnet)
 - **Attestation Registry Contract ID**: `CCBIDUNXHQG2ZLKYQ3WRPPQBOYK3KLGYJTKZQI6LLRFDSXU2VW25MYUG`
 - **Reputation Scorer Contract ID**: `CCHSVXYKCYDQTP7MUTGNLIFREUPU7IVPLKCHGHKHLHXQKAQMPZ6JGJBL`
-- **Example Contract Interaction (Tx Hash)**: [`a86ddf8949d2f385dc9fdee5ecf829f406350153fe8b18b0608111fae3f55b83`](https://stellar.expert/explorer/testnet/tx/a86ddf8949d2f385dc9fdee5ecf829f406350153fe8b18b0608111fae3f55b83)
+- **Contract Interaction (Tx Hash)**: [`a86ddf8949d2f385dc9fdee5ecf829f406350153fe8b18b0608111fae3f55b83`](https://stellar.expert/explorer/testnet/tx/a86ddf8949d2f385dc9fdee5ecf829f406350153fe8b18b0608111fae3f55b83)
 
 ## ✨ Key Features
 
