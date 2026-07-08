@@ -182,7 +182,7 @@ jobs:
           REGISTRY_ID=$(stellar contract deploy \
             --wasm target/wasm32-unknown-unknown/release/attestation_registry.optimized.wasm \
             --source deployer \
-            --network testnet)
+            --network testnet 2>deploy_err.log) || { cat deploy_err.log; exit 1; }
           echo "REGISTRY_ID=$REGISTRY_ID" >> $GITHUB_OUTPUT
           echo "AttestationRegistry deployed at: $REGISTRY_ID"
 
@@ -192,7 +192,7 @@ jobs:
           SCORER_ID=$(stellar contract deploy \
             --wasm target/wasm32-unknown-unknown/release/reputation_scorer.optimized.wasm \
             --source deployer \
-            --network testnet)
+            --network testnet 2>deploy_err.log) || { cat deploy_err.log; exit 1; }
           echo "SCORER_ID=$SCORER_ID" >> $GITHUB_OUTPUT
           echo "ReputationScorer deployed at: $SCORER_ID"
 
